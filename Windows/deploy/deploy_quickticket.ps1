@@ -1,22 +1,21 @@
 <#
 .SYNOPSIS
-    Deploys the ITFlow Quick Ticket tray app via TacticalRMM.
+    Deploys ITFlow Quick Ticket via TacticalRMM by silently running the
+    Inno Setup installer with per-client configuration.
 
 .DESCRIPTION
-    - Installs ITFlowQuickTicket.exe into C:\Program Files\ITFlowQuickTicket
-    - Writes a per-client config.json into C:\ProgramData\ITFlowQuickTicket
-    - Adds a shortcut to the All Users Startup folder so it launches on login
-    - Starts the app immediately for the current session (if one is active)
+    Downloads ITFlowQuickTicketSetup.exe and runs it with /VERYSILENT,
+    passing the ITFlow connection settings as install parameters. The
+    installer writes C:\ProgramData\ITFlowQuickTicket\config.json,
+    installs the app to C:\Program Files\ITFlowQuickTicket, and adds an
+    All Users Startup shortcut.
 
 .NOTES
     Run as a TacticalRMM script with type "powershell", running as System.
 
-    Set the values below via TacticalRMM script arguments / custom fields
-    (recommended), or edit the defaults directly per-client policy.
-
     Expected script arguments (in order):
-        1. ExeSourceUrl   - URL to download ITFlowQuickTicket.exe from
-                             (e.g. a TacticalRMM file share / your CDN)
+        1. InstallerUrl   - URL to download ITFlowQuickTicketSetup.exe from
+                             (e.g. attached to a GitHub release)
         2. ItflowBaseUrl  - e.g. https://itflow.foleyit.com
         3. ApiKey         - ITFlow API key (Admin > API Keys)
         4. ClientId       - ITFlow client_id for this client
@@ -25,7 +24,7 @@
 #>
 
 param(
-    [Parameter(Mandatory = $true)] [string]$ExeSourceUrl,
+    [Parameter(Mandatory = $true)] [string]$InstallerUrl,
     [Parameter(Mandatory = $true)] [string]$ItflowBaseUrl,
     [Parameter(Mandatory = $true)] [string]$ApiKey,
     [Parameter(Mandatory = $true)] [int]$ClientId,
@@ -35,46 +34,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$installDir = "C:\Program Files\ITFlowQuickTicket"
-$configDir  = "C:\ProgramData\ITFlowQuickTicket"
-$exePath    = Join-Path $installDir "ITFlowQuickTicket.exe"
-$configPath = Join-Path $configDir "config.json"
-$startupDir = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
-$shortcutPath = Join-Path $startupDir "ITFlow Quick Ticket.lnk"
+$installerPath = Join-Path $env:TEMP "ITFlowQuickTicketSetup.exe"
 
-# 1. Install directory + binary
-New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-Write-Host "Downloading ITFlowQuickTicket.exe from $ExeSourceUrl ..."
-Invoke-WebRequest -Uri $ExeSourceUrl -OutFile $exePath -UseBasicParsing
+Write-Host "Downloading installer from $InstallerUrl ..."
+Invoke-WebRequest -Uri $InstallerUrl -OutFile $installerPath -UseBasicParsing
 
-# 2. Per-client config
-New-Item -ItemType Directory -Force -Path $configDir | Out-Null
+$contactArg = if ($ContactId -gt 0) { $ContactId } else { "" }
 
-$config = [ordered]@{
-    itflow_base_url = $ItflowBaseUrl
-    api_key         = $ApiKey
-    client_id       = $ClientId
-    contact_id      = if ($ContactId -gt 0) { $ContactId } else { $null }
-    priority        = $Priority
-}
-$config | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
+$installerArgs = @(
+    "/VERYSILENT",
+    "/SUPPRESSMSGBOXES",
+    "/NORESTART",
+    "/ItflowBaseUrl=$ItflowBaseUrl",
+    "/ApiKey=$ApiKey",
+    "/ClientId=$ClientId",
+    "/ContactId=$contactArg",
+    "/Priority=$Priority"
+)
 
-Write-Host "Wrote config to $configPath"
+Write-Host "Running installer silently..."
+$proc = Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
+Write-Host "Installer exit code: $($proc.ExitCode)"
 
-# 3. Start on login (All Users Startup folder)
-$shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = $exePath
-$shortcut.WorkingDirectory = $installDir
-$shortcut.Description = "ITFlow Quick Ticket"
-$shortcut.Save()
+Remove-Item -Path $installerPath -Force -ErrorAction SilentlyContinue
 
-Write-Host "Created startup shortcut at $shortcutPath"
-
-# 4. Launch now for the active interactive session, if any
+# Launch now for the active interactive session, if any (the installer's
+# /SUPPRESSMSGBOXES + silent flags skip the "launch now" prompt)
 try {
+    $exePath = "C:\Program Files\ITFlowQuickTicket\ITFlowQuickTicket.exe"
     $explorer = Get-Process -Name explorer -IncludeUserName -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($explorer) {
+    if ($explorer -and (Test-Path $exePath)) {
         Start-Process -FilePath $exePath
         Write-Host "Launched ITFlowQuickTicket.exe"
     } else {
@@ -82,6 +71,10 @@ try {
     }
 } catch {
     Write-Host "Could not auto-launch app (will start on next login): $_"
+}
+
+if ($proc.ExitCode -ne 0) {
+    throw "Installer failed with exit code $($proc.ExitCode)"
 }
 
 Write-Host "ITFlow Quick Ticket deployment complete."

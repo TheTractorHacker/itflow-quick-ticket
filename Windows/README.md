@@ -54,30 +54,79 @@ The `api_key` is a **legacy API key** (Admin > API Keys in ITFlow). Note:
 - `itflow_quick_ticket.spec` — PyInstaller spec, produces a single
   windowed `.exe` (no console)
 - `requirements.txt` — Python dependencies
-- `deploy/deploy_quickticket.ps1` — TacticalRMM deployment script
-- `assets/icon.ico` — optional custom tray icon (not included; the app
-  falls back to a generated placeholder icon if missing)
+- `deploy/deploy_quickticket.ps1` — TacticalRMM deployment script (silently
+  runs the installer with per-client config)
+- `assets/icon.ico` — branded tray/installer icon
+- `../installer/ITFlowQuickTicket.iss` — Inno Setup script that builds the
+  configurable installer
+- `../.github/workflows/build.yml` — CI: builds the exe + installer on
+  every push, and attaches both to a GitHub release for tags `v*`
 
-## Building
+## Getting a build
+
+### Option A: GitHub Actions (no Windows machine needed)
+
+Push a tag like `v1.0.0` (or just push to `master` / run the workflow
+manually) and GitHub Actions will build on a `windows-latest` runner and
+upload:
+
+- `ITFlowQuickTicket.exe` — the bare tray app
+- `ITFlowQuickTicketSetup.exe` — the full installer (recommended)
+
+For tag pushes (`v*`), both files are also attached to a GitHub release.
+
+### Option B: Build locally on Windows
 
 ```powershell
+cd Windows
 pip install -r requirements.txt
 pyinstaller itflow_quick_ticket.spec
-# Output: dist\ITFlowQuickTicket.exe
+# Output: Windows\dist\ITFlowQuickTicket.exe
+
+# Then build the installer (requires Inno Setup 6: https://jrsoftware.org/isdl.php)
+cd ..\installer
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" ITFlowQuickTicket.iss
+# Output: installer\Output\ITFlowQuickTicketSetup.exe
 ```
 
-To brand the tray icon, drop a `.ico` file at `assets/icon.ico` before
-building.
+To rebrand the tray icon, replace `Windows/assets/icon.ico` (also used as
+the installer icon) before building.
+
+## Installer (`ITFlowQuickTicketSetup.exe`)
+
+Running the installer prompts for the ITFlow connection settings (base URL,
+API key, Client ID, Contact ID, Priority) on a dedicated wizard page, then:
+
+- Installs `ITFlowQuickTicket.exe` to `C:\Program Files\ITFlowQuickTicket`
+- Writes `C:\ProgramData\ITFlowQuickTicket\config.json` from the entered
+  values
+- Adds a shortcut to the All Users Startup folder so it launches on every
+  login
+- Offers to launch the app immediately
+
+### Unattended / silent install
+
+All wizard fields can be supplied as command-line parameters, which also
+pre-fill the wizard if shown:
+
+```
+ITFlowQuickTicketSetup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
+  /ItflowBaseUrl=https://itflow.foleyit.com ^
+  /ApiKey=XXXXXXXXXXXXXXXX ^
+  /ClientId=5 ^
+  /ContactId=12 ^
+  /Priority=Medium
+```
 
 ## Deploying via TacticalRMM
 
-1. Host `ITFlowQuickTicket.exe` somewhere TacticalRMM can download it from
-   (file share, internal URL, etc.).
+1. Get `ITFlowQuickTicketSetup.exe` from a GitHub release (Option A above)
+   and host it somewhere TacticalRMM can download it from.
 2. Run `deploy/deploy_quickticket.ps1` as a TacticalRMM script (System
    context) per client, with arguments:
 
    ```
-   -ExeSourceUrl  <url to ITFlowQuickTicket.exe>
+   -InstallerUrl  <url to ITFlowQuickTicketSetup.exe>
    -ItflowBaseUrl https://itflow.foleyit.com
    -ApiKey        <API key from Admin > API Keys>
    -ClientId      <ITFlow client_id for this client>
@@ -85,9 +134,9 @@ building.
    -Priority      Medium
    ```
 
-   This installs the exe to `C:\Program Files\ITFlowQuickTicket`, writes
-   `C:\ProgramData\ITFlowQuickTicket\config.json`, and adds a shortcut to
-   the All Users Startup folder so it launches on every login.
+   This downloads and silently runs the installer with those settings,
+   which installs the app, writes `config.json`, and sets up the Startup
+   shortcut — then launches the app for the current session if one exists.
 
 ## Config reference (`config.json`)
 
