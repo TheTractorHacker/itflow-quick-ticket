@@ -1,0 +1,9 @@
+# PyInstaller build artifacts
+build/
+dist/
+*.spec.bak
+__pycache__/
+*.pyc
+
+# Local secrets - never commit a real config
+**/config.local.json
