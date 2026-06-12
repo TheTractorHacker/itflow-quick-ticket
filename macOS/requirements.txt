@@ -1,0 +1,5 @@
+pystray
+pyobjc-framework-Cocoa
+Pillow
+requests
+pyinstaller

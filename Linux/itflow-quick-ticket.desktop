@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ITFlow Quick Ticket
+Comment=Submit an ITFlow support ticket with an optional screenshot
+Exec=/opt/itflow-quick-ticket/ITFlowQuickTicket
+Icon=/opt/itflow-quick-ticket/assets/icon.png
+Terminal=false
+Categories=Utility;
+X-GNOME-Autostart-enabled=true

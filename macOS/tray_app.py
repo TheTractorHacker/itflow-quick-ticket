@@ -1,12 +1,14 @@
 """
-ITFlow Quick Ticket - Windows tray app
+ITFlow Quick Ticket - macOS menu bar app
 
 Lets end users submit an ITFlow support ticket (with an optional full-screen
 screenshot) in a few clicks, without logging in to the client portal.
 
 Configuration is read from (in order of preference):
-  1. %ProgramData%\\ITFlowQuickTicket\\config.json
-  2. config.json next to this script / the packaged .exe
+  1. /Library/Application Support/ITFlowQuickTicket/config.json
+     (system-wide, set by install.sh / RMM)
+  2. ~/Library/Application Support/ITFlowQuickTicket/config.json
+  3. config.json next to this script / inside the .app bundle
 
 See config.json for the expected fields. Shared UI/logic lives in
 ../common/core.py.
@@ -21,15 +23,14 @@ import core  # noqa: E402
 
 
 def config_paths():
-    paths = []
-    program_data = os.environ.get("ProgramData")
-    if program_data:
-        paths.append(os.path.join(program_data, "ITFlowQuickTicket", "config.json"))
-    return paths
+    return [
+        "/Library/Application Support/ITFlowQuickTicket/config.json",
+        os.path.expanduser("~/Library/Application Support/ITFlowQuickTicket/config.json"),
+    ]
 
 
 def icon_path():
-    return os.path.join(core.app_dir(), "assets", "icon.ico")
+    return os.path.join(core.app_dir(), "assets", "icon.png")
 
 
 if __name__ == "__main__":

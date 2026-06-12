@@ -11,8 +11,8 @@ end user never sees credentials.
 | Platform | Status | Docs |
 |----------|--------|------|
 | Windows  | Available | [Windows/README.md](Windows/README.md) |
-| macOS    | Coming soon | [macOS/README.md](macOS/README.md) |
-| Linux    | Coming soon | [Linux/README.md](Linux/README.md) |
+| macOS    | Available | [macOS/README.md](macOS/README.md) |
+| Linux    | Available | [Linux/README.md](Linux/README.md) |
 
 ## Requirements
 
@@ -23,10 +23,15 @@ ticket).
 
 ## Repo layout
 
-- `Windows/` — tray app source (Python, pystray + tkinter), PyInstaller
-  spec, branded icon, and TacticalRMM deploy script
+- `common/` — shared tray app UI/logic (ttk ticket window, config loading,
+  tray icon wiring) used by every platform's `tray_app.py`
+- `Windows/` — tray app entry point, PyInstaller spec, branded icon, and
+  TacticalRMM deploy script
 - `installer/` — Inno Setup installer that prompts for per-install
   configuration and writes `config.json`
-- `.github/workflows/` — CI that builds the Windows exe + installer and
-  attaches them to GitHub releases
-- `macOS/`, `Linux/` — placeholders for future ports
+- `macOS/` — menu bar app entry point, PyInstaller spec/bundle, LaunchAgent,
+  and `install.sh`
+- `Linux/` — tray app entry point, PyInstaller spec, XDG autostart entry,
+  and `install.sh`
+- `.github/workflows/` — CI that builds all three platforms and attaches
+  the binaries/installers to GitHub releases

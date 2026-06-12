@@ -1,0 +1,13 @@
+pystray
+Pillow
+requests
+pyinstaller
+
+# System packages also required (install via your distro's package manager):
+#   - A system tray host that supports StatusNotifierItem/AppIndicator
+#     (e.g. GNOME "AppIndicator and KStatusNotifierItem Support" extension,
+#     or a tray built into KDE/XFCE/etc.)
+#   - python3-gi + gir1.2-appindicator3-0.1 (for the AppIndicator tray
+#     backend), or python3-xlib for the Xorg fallback backend
+#   - One of: scrot, grim, maim, slurp (used by Pillow's ImageGrab.grab()
+#     for the "Attach Screenshot" feature)

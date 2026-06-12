@@ -1,0 +1,86 @@
+#!/bin/bash
+# ITFlow Quick Ticket - macOS installer
+#
+# Installs the prebuilt ITFlowQuickTicket.app to /Applications, writes
+# /Library/Application Support/ITFlowQuickTicket/config.json, and registers
+# a LaunchAgent so it starts in the menu bar for every user on login.
+#
+# Usage (run as root, e.g. via RMM):
+#   ./install.sh <itflow_base_url> <api_key> <client_id> [contact_id] [priority]
+#
+# Example:
+#   ./install.sh https://itflow.foleyit.com XXXXXXXXXXXXXXXX 5 12 Medium
+#
+# Re-running this script upgrades an existing install: it stops any running
+# instance, replaces the .app, and (unless new values are passed) keeps the
+# existing config.json.
+
+set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root (sudo)." >&2
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_NAME="ITFlowQuickTicket.app"
+APP_DEST="/Applications/$APP_NAME"
+CONFIG_DIR="/Library/Application Support/ITFlowQuickTicket"
+CONFIG_PATH="$CONFIG_DIR/config.json"
+LAUNCH_AGENT_DEST="/Library/LaunchAgents/com.itflow.quickticket.plist"
+
+ITFLOW_BASE_URL="${1:-}"
+API_KEY="${2:-}"
+CLIENT_ID="${3:-}"
+CONTACT_ID="${4:-}"
+PRIORITY="${5:-Medium}"
+
+SRC_APP=""
+if [ -d "$SCRIPT_DIR/dist/$APP_NAME" ]; then
+    SRC_APP="$SCRIPT_DIR/dist/$APP_NAME"
+elif [ -d "$SCRIPT_DIR/$APP_NAME" ]; then
+    SRC_APP="$SCRIPT_DIR/$APP_NAME"
+else
+    echo "$APP_NAME not found next to install.sh (expected ./$APP_NAME or ./dist/$APP_NAME)" >&2
+    exit 1
+fi
+
+# Stop any running instance so the bundle can be replaced cleanly.
+pkill -f "$APP_DEST/Contents/MacOS/ITFlowQuickTicket" 2>/dev/null || true
+launchctl bootout system/com.itflow.quickticket 2>/dev/null || true
+
+rm -rf "$APP_DEST"
+cp -R "$SRC_APP" "$APP_DEST"
+
+mkdir -p "$CONFIG_DIR"
+
+if [ -n "$ITFLOW_BASE_URL" ] && [ -n "$API_KEY" ] && [ -n "$CLIENT_ID" ]; then
+    if [ -n "$CONTACT_ID" ]; then
+        CONTACT_JSON="$CONTACT_ID"
+    else
+        CONTACT_JSON="null"
+    fi
+
+    cat > "$CONFIG_PATH" <<EOF
+{
+    "itflow_base_url": "$ITFLOW_BASE_URL",
+    "api_key": "$API_KEY",
+    "client_id": $CLIENT_ID,
+    "contact_id": $CONTACT_JSON,
+    "priority": "$PRIORITY"
+}
+EOF
+    chmod 644 "$CONFIG_PATH"
+elif [ ! -f "$CONFIG_PATH" ]; then
+    echo "No config.json exists and no connection settings were passed." >&2
+    echo "Usage: $0 <itflow_base_url> <api_key> <client_id> [contact_id] [priority]" >&2
+    exit 1
+else
+    echo "Keeping existing $CONFIG_PATH"
+fi
+
+install -m 644 "$SCRIPT_DIR/com.itflow.quickticket.plist" "$LAUNCH_AGENT_DEST"
+launchctl bootstrap system "$LAUNCH_AGENT_DEST" 2>/dev/null || true
+
+echo "ITFlow Quick Ticket installed to $APP_DEST"
+echo "It will start automatically in the menu bar for every user on login."
