@@ -1,4 +1,4 @@
-# ITFlow Quick Ticket (macOS)
+# ITPanel Pro (macOS)
 
 A menu bar app for macOS, equivalent to the [Windows tray app](../Windows),
 letting end users submit an ITFlow support ticket — with an optional
@@ -15,11 +15,11 @@ out to the built-in `screencapture` tool (no extra install needed).
 ## Repo layout
 
 - `tray_app.py` — entry point; shared UI/logic lives in `../common/core.py`
-- `itflow_quick_ticket.spec` — PyInstaller spec, produces
-  `ITFlowQuickTicket.app`
-- `com.itflow.quickticket.plist` — LaunchAgent for autostart
+- `itpanel_pro.spec` — PyInstaller spec, produces
+  `ITPanelPro.app`
+- `com.foleyit.itpanelpro.plist` — LaunchAgent for autostart
 - `install.sh` — installs the app to `/Applications`, writes
-  `/Library/Application Support/ITFlowQuickTicket/config.json`, and
+  `/Library/Application Support/ITPanelPro/config.json`, and
   registers the LaunchAgent
 - `assets/` — branded icon
 
@@ -28,7 +28,7 @@ out to the built-in `screencapture` tool (no extra install needed).
 ### Option A: GitHub Actions
 
 Push a tag like `v1.3.0` (or run the workflow manually) and GitHub Actions
-builds on `macos-latest`, producing `ITFlowQuickTicket.app` (zipped) and
+builds on `macos-latest`, producing `ITPanelPro.app` (zipped) and
 attaching it to the GitHub release.
 
 ### Option B: Build locally on macOS
@@ -38,8 +38,8 @@ cd macOS
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pyinstaller itflow_quick_ticket.spec
-# app at dist/ITFlowQuickTicket.app
+pyinstaller itpanel_pro.spec
+# app at dist/ITPanelPro.app
 ```
 
 ## Installing
@@ -48,8 +48,8 @@ pyinstaller itflow_quick_ticket.spec
 sudo ./install.sh https://itflow.foleyit.com <API_KEY> <CLIENT_ID> [CONTACT_ID] [PRIORITY]
 ```
 
-This installs `ITFlowQuickTicket.app` to `/Applications`, writes
-`/Library/Application Support/ITFlowQuickTicket/config.json`, and registers
+This installs `ITPanelPro.app` to `/Applications`, writes
+`/Library/Application Support/ITPanelPro/config.json`, and registers
 a LaunchAgent so the app appears in the menu bar for every user on login.
 
 ### Upgrading
@@ -64,7 +64,7 @@ Since this build isn't notarized/signed, first launch may require
 right-click > Open, or running:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/ITFlowQuickTicket.app
+xattr -dr com.apple.quarantine /Applications/ITPanelPro.app
 ```
 
 ## Config reference (`config.json`)
@@ -76,9 +76,9 @@ Same fields as the [Windows app](../Windows/README.md#config-reference-configjso
 
 Config is read from, in order:
 
-1. `/Library/Application Support/ITFlowQuickTicket/config.json` (system-wide,
+1. `/Library/Application Support/ITPanelPro/config.json` (system-wide,
    written by `install.sh`)
-2. `~/Library/Application Support/ITFlowQuickTicket/config.json` (per-user
+2. `~/Library/Application Support/ITPanelPro/config.json` (per-user
    override)
 3. `config.json` next to the app bundle
 

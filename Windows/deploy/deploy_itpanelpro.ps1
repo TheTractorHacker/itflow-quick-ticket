@@ -1,20 +1,21 @@
 <#
 .SYNOPSIS
-    Deploys ITFlow Quick Ticket via TacticalRMM by silently running the
+    Deploys ITPanel Pro via TacticalRMM by silently running the
     Inno Setup installer with per-client configuration.
 
 .DESCRIPTION
-    Downloads ITFlowQuickTicketSetup.exe and runs it with /VERYSILENT,
+    Downloads ITPanelProSetup.exe and runs it with /VERYSILENT,
     passing the ITFlow connection settings as install parameters. The
-    installer writes C:\ProgramData\ITFlowQuickTicket\config.json,
-    installs the app to C:\Program Files\ITFlowQuickTicket, and adds an
-    All Users Startup shortcut.
+    installer writes C:\ProgramData\ITPanelPro\config.json,
+    installs the app to C:\Program Files\ITPanelPro, and adds an
+    All Users Startup shortcut. If a previous "ITFlow Quick Ticket" install
+    is found, it is silently removed and its config is migrated.
 
 .NOTES
     Run as a TacticalRMM script with type "powershell", running as System.
 
     Expected script arguments (in order):
-        1. InstallerUrl   - URL to download ITFlowQuickTicketSetup.exe from
+        1. InstallerUrl   - URL to download ITPanelProSetup.exe from
                              (e.g. attached to a GitHub release)
         2. ItflowBaseUrl  - e.g. https://itflow.foleyit.com
         3. ApiKey         - ITFlow API key (Admin > API Keys)
@@ -34,7 +35,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$installerPath = Join-Path $env:TEMP "ITFlowQuickTicketSetup.exe"
+$installerPath = Join-Path $env:TEMP "ITPanelProSetup.exe"
 
 Write-Host "Downloading installer from $InstallerUrl ..."
 Invoke-WebRequest -Uri $InstallerUrl -OutFile $installerPath -UseBasicParsing
@@ -61,11 +62,11 @@ Remove-Item -Path $installerPath -Force -ErrorAction SilentlyContinue
 # Launch now for the active interactive session, if any (the installer's
 # /SUPPRESSMSGBOXES + silent flags skip the "launch now" prompt)
 try {
-    $exePath = "C:\Program Files\ITFlowQuickTicket\ITFlowQuickTicket.exe"
+    $exePath = "C:\Program Files\ITPanelPro\ITPanelPro.exe"
     $explorer = Get-Process -Name explorer -IncludeUserName -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($explorer -and (Test-Path $exePath)) {
         Start-Process -FilePath $exePath
-        Write-Host "Launched ITFlowQuickTicket.exe"
+        Write-Host "Launched ITPanelPro.exe"
     } else {
         Write-Host "No interactive session detected; app will start on next login."
     }
@@ -77,4 +78,4 @@ if ($proc.ExitCode -ne 0) {
     throw "Installer failed with exit code $($proc.ExitCode)"
 }
 
-Write-Host "ITFlow Quick Ticket deployment complete."
+Write-Host "ITPanel Pro deployment complete."

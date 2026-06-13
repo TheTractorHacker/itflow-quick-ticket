@@ -1,13 +1,13 @@
 """
-ITFlow Quick Ticket - macOS menu bar app
+ITPanel Pro - macOS menu bar app
 
 Lets end users submit an ITFlow support ticket (with an optional full-screen
 screenshot) in a few clicks, without logging in to the client portal.
 
 Configuration is read from (in order of preference):
-  1. /Library/Application Support/ITFlowQuickTicket/config.json
+  1. /Library/Application Support/ITPanelPro/config.json
      (system-wide, set by install.sh / RMM)
-  2. ~/Library/Application Support/ITFlowQuickTicket/config.json
+  2. ~/Library/Application Support/ITPanelPro/config.json
   3. config.json next to this script / inside the .app bundle
 
 See config.json for the expected fields. Shared UI/logic lives in
@@ -24,8 +24,8 @@ import core  # noqa: E402
 
 def config_paths():
     return [
-        "/Library/Application Support/ITFlowQuickTicket/config.json",
-        os.path.expanduser("~/Library/Application Support/ITFlowQuickTicket/config.json"),
+        "/Library/Application Support/ITPanelPro/config.json",
+        os.path.expanduser("~/Library/Application Support/ITPanelPro/config.json"),
     ]
 
 

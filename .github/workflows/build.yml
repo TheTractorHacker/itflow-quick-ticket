@@ -27,29 +27,29 @@ jobs:
 
       - name: Build tray app exe with PyInstaller
         working-directory: Windows
-        run: pyinstaller itflow_quick_ticket.spec
+        run: pyinstaller itpanel_pro.spec
 
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
       - name: Build installer
-        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\ITFlowQuickTicket.iss'
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\ITPanelPro.iss'
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: itflow-quick-ticket-windows
+          name: itpanel-pro-windows
           path: |
-            Windows/dist/ITFlowQuickTicket.exe
-            installer/Output/ITFlowQuickTicketSetup.exe
+            Windows/dist/ITPanelPro.exe
+            installer/Output/ITPanelProSetup.exe
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            Windows/dist/ITFlowQuickTicket.exe
-            installer/Output/ITFlowQuickTicketSetup.exe
+            Windows/dist/ITPanelPro.exe
+            installer/Output/ITPanelProSetup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,28 +75,28 @@ jobs:
 
       - name: Build binary with PyInstaller
         working-directory: Linux
-        run: pyinstaller itflow_quick_ticket.spec
+        run: pyinstaller itpanel_pro.spec
 
       - name: Package release bundle
         working-directory: Linux
         run: |
           mkdir -p package
-          cp dist/ITFlowQuickTicket package/
-          cp install.sh itflow-quick-ticket.desktop package/
+          cp dist/ITPanelPro package/
+          cp install.sh itpanel-pro.desktop package/
           cp -r assets package/
-          tar -czf itflow-quick-ticket-linux.tar.gz -C package .
+          tar -czf itpanel-pro-linux.tar.gz -C package .
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: itflow-quick-ticket-linux
-          path: Linux/itflow-quick-ticket-linux.tar.gz
+          name: itpanel-pro-linux
+          path: Linux/itpanel-pro-linux.tar.gz
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: Linux/itflow-quick-ticket-linux.tar.gz
+          files: Linux/itpanel-pro-linux.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -117,26 +117,26 @@ jobs:
 
       - name: Build app with PyInstaller
         working-directory: macOS
-        run: pyinstaller itflow_quick_ticket.spec
+        run: pyinstaller itpanel_pro.spec
 
       - name: Package release bundle
         working-directory: macOS
         run: |
           mkdir -p package
-          cp -R dist/ITFlowQuickTicket.app package/
-          cp install.sh com.itflow.quickticket.plist package/
-          cd package && zip -r ../itflow-quick-ticket-macos.zip .
+          cp -R dist/ITPanelPro.app package/
+          cp install.sh com.foleyit.itpanelpro.plist package/
+          cd package && zip -r ../itpanel-pro-macos.zip .
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: itflow-quick-ticket-macos
-          path: macOS/itflow-quick-ticket-macos.zip
+          name: itpanel-pro-macos
+          path: macOS/itpanel-pro-macos.zip
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: macOS/itflow-quick-ticket-macos.zip
+          files: macOS/itpanel-pro-macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

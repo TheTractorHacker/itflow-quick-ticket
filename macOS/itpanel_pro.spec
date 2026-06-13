@@ -1,9 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
-# Build with: pyinstaller itflow_quick_ticket.spec
+# Build with: pyinstaller itpanel_pro.spec
 #
-# Produces ITFlowQuickTicket.app (a menu-bar-only "agent" app, no Dock icon).
+# Produces ITPanelPro.app (a menu-bar-only "agent" app, no Dock icon).
 # config.json is NOT bundled — it is deployed separately to
-# /Library/Application Support/ITFlowQuickTicket/config.json (see install.sh).
+# /Library/Application Support/ITPanelPro/config.json (see install.sh).
 
 import os
 
@@ -32,7 +32,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='ITFlowQuickTicket',
+    name='ITPanelPro',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -49,13 +49,13 @@ exe = EXE(
 
 app = BUNDLE(
     exe,
-    name='ITFlowQuickTicket.app',
+    name='ITPanelPro.app',
     icon=None,
-    bundle_identifier='com.itflow.quickticket',
+    bundle_identifier='com.foleyit.itpanelpro',
     info_plist={
-        'CFBundleName': 'ITFlow Quick Ticket',
-        'CFBundleDisplayName': 'ITFlow Quick Ticket',
-        'CFBundleShortVersionString': '1.4.0',
+        'CFBundleName': 'ITPanel Pro',
+        'CFBundleDisplayName': 'ITPanel Pro',
+        'CFBundleShortVersionString': '2.0.0',
         'LSUIElement': True,  # menu-bar app, no Dock icon
         'NSHighResolutionCapable': True,
     },

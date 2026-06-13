@@ -1,4 +1,4 @@
-# ITFlow Quick Ticket
+# ITPanel Pro
 
 A lightweight tray/menu bar app that lets end users submit an ITFlow support
 ticket — with an optional screenshot or file attachment — in a few clicks,
@@ -17,8 +17,10 @@ install time so the end user never sees credentials.
 - Offline queue — tickets submitted while offline are sent automatically
   once connectivity returns
 - "My Recent Tickets" tray menu view
+- "Open Client Portal" button to open the ITFlow client portal in the browser
 - Desktop notifications when a submitted ticket's status changes
-- Silent auto-update check against GitHub releases
+- Silent auto-update check against GitHub releases, with a one-click
+  download-and-install update on Windows
 - Per-MSP branding (accent color + logo)
 - "Quick Tools" troubleshooting menu: public IP, ping google.com, list
   printers, restart print spooler/CUPS

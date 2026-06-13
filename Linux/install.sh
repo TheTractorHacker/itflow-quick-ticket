@@ -1,8 +1,8 @@
 #!/bin/bash
-# ITFlow Quick Ticket - Linux installer
+# ITPanel Pro - Linux installer
 #
-# Installs the prebuilt ITFlowQuickTicket binary to /opt/itflow-quick-ticket,
-# writes /etc/itflow-quick-ticket/config.json, and registers it as an
+# Installs the prebuilt ITPanelPro binary to /opt/itpanel-pro,
+# writes /etc/itpanel-pro/config.json, and registers it as an
 # XDG autostart application for all users.
 #
 # Usage (run as root, e.g. via RMM):
@@ -13,7 +13,8 @@
 #
 # Re-running this script upgrades an existing install: it stops any running
 # instance, replaces the binary, and (unless new values are passed) keeps the
-# existing config.json.
+# existing config.json. If a previous "ITFlow Quick Ticket" install is found,
+# it is removed and its config.json is migrated.
 
 set -euo pipefail
 
@@ -23,10 +24,14 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="/opt/itflow-quick-ticket"
-CONFIG_DIR="/etc/itflow-quick-ticket"
+INSTALL_DIR="/opt/itpanel-pro"
+CONFIG_DIR="/etc/itpanel-pro"
 CONFIG_PATH="$CONFIG_DIR/config.json"
 AUTOSTART_DIR="/etc/xdg/autostart"
+
+OLD_INSTALL_DIR="/opt/itflow-quick-ticket"
+OLD_CONFIG_PATH="/etc/itflow-quick-ticket/config.json"
+OLD_AUTOSTART_FILE="$AUTOSTART_DIR/itflow-quick-ticket.desktop"
 
 ITFLOW_BASE_URL="${1:-}"
 API_KEY="${2:-}"
@@ -35,16 +40,30 @@ CONTACT_ID="${4:-}"
 PRIORITY="${5:-Medium}"
 
 # Stop any running instance so the binary can be replaced cleanly.
-pkill -f "$INSTALL_DIR/ITFlowQuickTicket" 2>/dev/null || true
+pkill -f "$INSTALL_DIR/ITPanelPro" 2>/dev/null || true
+
+# Remove a previous "ITFlow Quick Ticket" install, migrating its config first.
+if [ -d "$OLD_INSTALL_DIR" ] || [ -f "$OLD_AUTOSTART_FILE" ]; then
+    echo "Removing previous ITFlow Quick Ticket install..."
+    pkill -f "$OLD_INSTALL_DIR/ITFlowQuickTicket" 2>/dev/null || true
+    rm -f "$OLD_AUTOSTART_FILE"
+    rm -rf "$OLD_INSTALL_DIR"
+fi
+
+if [ -f "$OLD_CONFIG_PATH" ] && [ ! -f "$CONFIG_PATH" ]; then
+    mkdir -p "$CONFIG_DIR"
+    cp "$OLD_CONFIG_PATH" "$CONFIG_PATH"
+    rm -rf "/etc/itflow-quick-ticket"
+fi
 
 mkdir -p "$INSTALL_DIR" "$CONFIG_DIR" "$AUTOSTART_DIR"
 
-if [ -f "$SCRIPT_DIR/dist/ITFlowQuickTicket" ]; then
-    install -m 755 "$SCRIPT_DIR/dist/ITFlowQuickTicket" "$INSTALL_DIR/ITFlowQuickTicket"
-elif [ -f "$SCRIPT_DIR/ITFlowQuickTicket" ]; then
-    install -m 755 "$SCRIPT_DIR/ITFlowQuickTicket" "$INSTALL_DIR/ITFlowQuickTicket"
+if [ -f "$SCRIPT_DIR/dist/ITPanelPro" ]; then
+    install -m 755 "$SCRIPT_DIR/dist/ITPanelPro" "$INSTALL_DIR/ITPanelPro"
+elif [ -f "$SCRIPT_DIR/ITPanelPro" ]; then
+    install -m 755 "$SCRIPT_DIR/ITPanelPro" "$INSTALL_DIR/ITPanelPro"
 else
-    echo "ITFlowQuickTicket binary not found next to install.sh (expected ./ITFlowQuickTicket or ./dist/ITFlowQuickTicket)" >&2
+    echo "ITPanelPro binary not found next to install.sh (expected ./ITPanelPro or ./dist/ITPanelPro)" >&2
     exit 1
 fi
 
@@ -53,7 +72,7 @@ if [ -f "$SCRIPT_DIR/assets/icon.png" ]; then
     install -m 644 "$SCRIPT_DIR/assets/icon.png" "$INSTALL_DIR/assets/icon.png"
 fi
 
-install -m 644 "$SCRIPT_DIR/itflow-quick-ticket.desktop" "$AUTOSTART_DIR/itflow-quick-ticket.desktop"
+install -m 644 "$SCRIPT_DIR/itpanel-pro.desktop" "$AUTOSTART_DIR/itpanel-pro.desktop"
 
 if [ -n "$ITFLOW_BASE_URL" ] && [ -n "$API_KEY" ] && [ -n "$CLIENT_ID" ]; then
     if [ -n "$CONTACT_ID" ]; then
@@ -80,12 +99,12 @@ else
     echo "Keeping existing $CONFIG_PATH"
 fi
 
-echo "ITFlow Quick Ticket installed to $INSTALL_DIR"
+echo "ITPanel Pro installed to $INSTALL_DIR"
 echo "It will start automatically on next login for all users."
 
 # Launch now for the current graphical session, if any.
 if [ -n "${XDG_CURRENT_DESKTOP:-}" ] || [ -n "${DISPLAY:-}" ]; then
-    nohup "$INSTALL_DIR/ITFlowQuickTicket" >/dev/null 2>&1 &
+    nohup "$INSTALL_DIR/ITPanelPro" >/dev/null 2>&1 &
     disown || true
-    echo "Launched ITFlowQuickTicket"
+    echo "Launched ITPanelPro"
 fi

@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.itflow.quickticket</string>
+    <string>com.foleyit.itpanelpro</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Applications/ITFlowQuickTicket.app/Contents/MacOS/ITFlowQuickTicket</string>
+        <string>/Applications/ITPanelPro.app/Contents/MacOS/ITPanelPro</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

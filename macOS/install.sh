@@ -1,8 +1,8 @@
 #!/bin/bash
-# ITFlow Quick Ticket - macOS installer
+# ITPanel Pro - macOS installer
 #
-# Installs the prebuilt ITFlowQuickTicket.app to /Applications, writes
-# /Library/Application Support/ITFlowQuickTicket/config.json, and registers
+# Installs the prebuilt ITPanelPro.app to /Applications, writes
+# /Library/Application Support/ITPanelPro/config.json, and registers
 # a LaunchAgent so it starts in the menu bar for every user on login.
 #
 # Usage (run as root, e.g. via RMM):
@@ -13,7 +13,8 @@
 #
 # Re-running this script upgrades an existing install: it stops any running
 # instance, replaces the .app, and (unless new values are passed) keeps the
-# existing config.json.
+# existing config.json. If a previous "ITFlow Quick Ticket" install is found,
+# it is removed and its config.json is migrated.
 
 set -euo pipefail
 
@@ -23,11 +24,15 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_NAME="ITFlowQuickTicket.app"
+APP_NAME="ITPanelPro.app"
 APP_DEST="/Applications/$APP_NAME"
-CONFIG_DIR="/Library/Application Support/ITFlowQuickTicket"
+CONFIG_DIR="/Library/Application Support/ITPanelPro"
 CONFIG_PATH="$CONFIG_DIR/config.json"
-LAUNCH_AGENT_DEST="/Library/LaunchAgents/com.itflow.quickticket.plist"
+LAUNCH_AGENT_DEST="/Library/LaunchAgents/com.foleyit.itpanelpro.plist"
+
+OLD_APP_DEST="/Applications/ITFlowQuickTicket.app"
+OLD_CONFIG_PATH="/Library/Application Support/ITFlowQuickTicket/config.json"
+OLD_LAUNCH_AGENT_DEST="/Library/LaunchAgents/com.itflow.quickticket.plist"
 
 ITFLOW_BASE_URL="${1:-}"
 API_KEY="${2:-}"
@@ -46,8 +51,23 @@ else
 fi
 
 # Stop any running instance so the bundle can be replaced cleanly.
-pkill -f "$APP_DEST/Contents/MacOS/ITFlowQuickTicket" 2>/dev/null || true
-launchctl bootout system/com.itflow.quickticket 2>/dev/null || true
+pkill -f "$APP_DEST/Contents/MacOS/ITPanelPro" 2>/dev/null || true
+launchctl bootout system/com.foleyit.itpanelpro 2>/dev/null || true
+
+# Remove a previous "ITFlow Quick Ticket" install, migrating its config first.
+if [ -d "$OLD_APP_DEST" ] || [ -f "$OLD_LAUNCH_AGENT_DEST" ]; then
+    echo "Removing previous ITFlow Quick Ticket install..."
+    pkill -f "$OLD_APP_DEST/Contents/MacOS/ITFlowQuickTicket" 2>/dev/null || true
+    launchctl bootout system/com.itflow.quickticket 2>/dev/null || true
+    rm -f "$OLD_LAUNCH_AGENT_DEST"
+    rm -rf "$OLD_APP_DEST"
+fi
+
+if [ -f "$OLD_CONFIG_PATH" ] && [ ! -f "$CONFIG_PATH" ]; then
+    mkdir -p "$CONFIG_DIR"
+    cp "$OLD_CONFIG_PATH" "$CONFIG_PATH"
+    rm -f "$OLD_CONFIG_PATH"
+fi
 
 rm -rf "$APP_DEST"
 cp -R "$SRC_APP" "$APP_DEST"
@@ -79,8 +99,8 @@ else
     echo "Keeping existing $CONFIG_PATH"
 fi
 
-install -m 644 "$SCRIPT_DIR/com.itflow.quickticket.plist" "$LAUNCH_AGENT_DEST"
+install -m 644 "$SCRIPT_DIR/com.foleyit.itpanelpro.plist" "$LAUNCH_AGENT_DEST"
 launchctl bootstrap system "$LAUNCH_AGENT_DEST" 2>/dev/null || true
 
-echo "ITFlow Quick Ticket installed to $APP_DEST"
+echo "ITPanel Pro installed to $APP_DEST"
 echo "It will start automatically in the menu bar for every user on login."

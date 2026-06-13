@@ -1,4 +1,4 @@
-# ITFlow Quick Ticket (Windows)
+# ITPanel Pro (Windows)
 
 A lightweight Windows tray app that lets end users submit an ITFlow support
 ticket — with an optional full-screen screenshot — in a few clicks, with no
@@ -50,14 +50,14 @@ The `api_key` is a **legacy API key** (Admin > API Keys in ITFlow). Note:
 
 - `tray_app.py` — the application (pystray + tkinter + Pillow + requests)
 - `config.json` — config template, deployed to
-  `%ProgramData%\ITFlowQuickTicket\config.json`
-- `itflow_quick_ticket.spec` — PyInstaller spec, produces a single
+  `%ProgramData%\ITPanelPro\config.json`
+- `itpanel_pro.spec` — PyInstaller spec, produces a single
   windowed `.exe` (no console)
 - `requirements.txt` — Python dependencies
-- `deploy/deploy_quickticket.ps1` — TacticalRMM deployment script (silently
+- `deploy/deploy_itpanelpro.ps1` — TacticalRMM deployment script (silently
   runs the installer with per-client config)
 - `assets/icon.ico` — branded tray/installer icon
-- `../installer/ITFlowQuickTicket.iss` — Inno Setup script that builds the
+- `../installer/ITPanelPro.iss` — Inno Setup script that builds the
   configurable installer
 - `../.github/workflows/build.yml` — CI: builds the exe + installer on
   every push, and attaches both to a GitHub release for tags `v*`
@@ -70,8 +70,8 @@ Push a tag like `v1.0.0` (or just push to `master` / run the workflow
 manually) and GitHub Actions will build on a `windows-latest` runner and
 upload:
 
-- `ITFlowQuickTicket.exe` — the bare tray app
-- `ITFlowQuickTicketSetup.exe` — the full installer (recommended)
+- `ITPanelPro.exe` — the bare tray app
+- `ITPanelProSetup.exe` — the full installer (recommended)
 
 For tag pushes (`v*`), both files are also attached to a GitHub release.
 
@@ -80,25 +80,25 @@ For tag pushes (`v*`), both files are also attached to a GitHub release.
 ```powershell
 cd Windows
 pip install -r requirements.txt
-pyinstaller itflow_quick_ticket.spec
-# Output: Windows\dist\ITFlowQuickTicket.exe
+pyinstaller itpanel_pro.spec
+# Output: Windows\dist\ITPanelPro.exe
 
 # Then build the installer (requires Inno Setup 6: https://jrsoftware.org/isdl.php)
 cd ..\installer
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" ITFlowQuickTicket.iss
-# Output: installer\Output\ITFlowQuickTicketSetup.exe
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" ITPanelPro.iss
+# Output: installer\Output\ITPanelProSetup.exe
 ```
 
 To rebrand the tray icon, replace `Windows/assets/icon.ico` (also used as
 the installer icon) before building.
 
-## Installer (`ITFlowQuickTicketSetup.exe`)
+## Installer (`ITPanelProSetup.exe`)
 
 Running the installer prompts for the ITFlow connection settings (base URL,
 API key, Client ID, Contact ID, Priority) on a dedicated wizard page, then:
 
-- Installs `ITFlowQuickTicket.exe` to `C:\Program Files\ITFlowQuickTicket`
-- Writes `C:\ProgramData\ITFlowQuickTicket\config.json` from the entered
+- Installs `ITPanelPro.exe` to `C:\Program Files\ITPanelPro`
+- Writes `C:\ProgramData\ITPanelPro\config.json` from the entered
   values
 - Adds a shortcut to the All Users Startup folder so it launches on every
   login
@@ -110,7 +110,7 @@ All wizard fields can be supplied as command-line parameters, which also
 pre-fill the wizard if shown:
 
 ```
-ITFlowQuickTicketSetup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
+ITPanelProSetup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
   /ItflowBaseUrl=https://itflow.foleyit.com ^
   /ApiKey=XXXXXXXXXXXXXXXX ^
   /ClientId=5 ^
@@ -120,25 +120,25 @@ ITFlowQuickTicketSetup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
 
 ## Deploying via TacticalRMM
 
-1. Get `ITFlowQuickTicketSetup.exe` from a GitHub release (Option A above)
+1. Get `ITPanelProSetup.exe` from a GitHub release (Option A above)
    and host it somewhere TacticalRMM can download it from — the direct
    release asset URL works fine, e.g.:
 
    ```
-   https://github.com/TheTractorHacker/itflow-quick-ticket/releases/latest/download/ITFlowQuickTicketSetup.exe
+   https://github.com/TheTractorHacker/itpanel-pro/releases/latest/download/ITPanelProSetup.exe
    ```
 
-2. In TacticalRMM, add `deploy/deploy_quickticket.ps1` as a script (type
+2. In TacticalRMM, add `deploy/deploy_itpanelpro.ps1` as a script (type
    **PowerShell**, run as **System**), then set its **Script Arguments**
    to a single line per client, e.g.:
 
    ```
-   -InstallerUrl "https://github.com/TheTractorHacker/itflow-quick-ticket/releases/latest/download/ITFlowQuickTicketSetup.exe" -ItflowBaseUrl "https://itflow.foleyit.com" -ApiKey "XXXXXXXXXXXXXXXX" -ClientId 5 -ContactId 12 -Priority "Medium"
+   -InstallerUrl "https://github.com/TheTractorHacker/itpanel-pro/releases/latest/download/ITPanelProSetup.exe" -ItflowBaseUrl "https://itflow.foleyit.com" -ApiKey "XXXXXXXXXXXXXXXX" -ClientId 5 -ContactId 12 -Priority "Medium"
    ```
 
    | Argument | Value |
    |----------|-------|
-   | `-InstallerUrl`  | URL to `ITFlowQuickTicketSetup.exe` (above) |
+   | `-InstallerUrl`  | URL to `ITPanelProSetup.exe` (above) |
    | `-ItflowBaseUrl` | e.g. `https://itflow.foleyit.com` |
    | `-ApiKey`        | API key from Admin > API Keys |
    | `-ClientId`      | ITFlow `client_id` for this client |
@@ -156,6 +156,18 @@ TacticalRMM script above) upgrades an existing install in place: it closes
 the running tray app, replaces the exe, and restarts it — no uninstall
 step needed. If you don't pass connection settings on an upgrade run, the
 existing `config.json` values are kept automatically.
+
+Machines still running the old **ITFlow Quick Ticket** are also upgraded
+cleanly: `ITPanelProSetup.exe` detects the previous install, silently
+uninstalls it, and migrates its `config.json` to the new
+`%ProgramData%\ITPanelPro\` location.
+
+### Self-update
+
+The tray app's "Check for Updates" menu item checks the GitHub releases feed
+and, if a newer version is available, offers to download `ITPanelProSetup.exe`
+and run it silently — the running app is closed and restarted automatically
+once the update finishes, with no manual download/rerun needed.
 
 ## Config reference (`config.json`)
 
@@ -177,6 +189,8 @@ install (or templating it in your own deployment scripts).
 
 ### Other new features (v1.4.0+)
 
+- **Open Client Portal** — tray menu item that opens the ITFlow client
+  portal (`{itflow_base_url}/client/`) in the default browser.
 - **Asset auto-link** — the hostname of the machine is sent with every
   ticket and matched against the client's Assets in ITFlow (by Asset Name
   or Asset Tag) to set the ticket's linked asset automatically.

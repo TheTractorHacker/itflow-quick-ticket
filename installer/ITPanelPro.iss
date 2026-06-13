@@ -1,32 +1,37 @@
-; ITFlow Quick Ticket - Inno Setup installer
+; ITPanel Pro - Inno Setup installer
 ;
 ; Installs the tray app and prompts for per-install configuration
 ; (ITFlow base URL, API key, client ID, contact ID, priority), writing
-; the result to %ProgramData%\ITFlowQuickTicket\config.json.
+; the result to %ProgramData%\ITPanelPro\config.json.
 ;
-; Build:  ISCC.exe ITFlowQuickTicket.iss
-; Output: installer\Output\ITFlowQuickTicketSetup.exe
+; If an older "ITFlow Quick Ticket" install is detected (old AppId), it is
+; silently uninstalled first and its config.json is migrated so existing
+; deployments upgrade cleanly to ITPanel Pro.
+;
+; Build:  ISCC.exe ITPanelPro.iss
+; Output: installer\Output\ITPanelProSetup.exe
 ;
 ; Supports unattended installs, e.g.:
-;   ITFlowQuickTicketSetup.exe /VERYSILENT /SUPPRESSMSGBOXES ^
+;   ITPanelProSetup.exe /VERYSILENT /SUPPRESSMSGBOXES ^
 ;     /ItflowBaseUrl=https://itflow.foleyit.com ^
 ;     /ApiKey=XXXXXXXX /ClientId=5 /ContactId=12 /Priority=Medium
 
-#define MyAppName "ITFlow Quick Ticket"
-#define MyAppVersion "1.4.0"
+#define MyAppName "ITPanel Pro"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "Foley IT"
-#define MyAppExeName "ITFlowQuickTicket.exe"
+#define MyAppExeName "ITPanelPro.exe"
+#define OldAppId "{B7B6A6E1-6E0C-4C2D-9F2F-7C1D4A9E3B21}"
 
 [Setup]
-AppId={{B7B6A6E1-6E0C-4C2D-9F2F-7C1D4A9E3B21}}
+AppId={{9EAF8FE4-782D-48E8-BFC8-51D9F008F82E}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\ITFlowQuickTicket
+DefaultDirName={autopf}\ITPanelPro
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=Output
-OutputBaseFilename=ITFlowQuickTicketSetup
+OutputBaseFilename=ITPanelProSetup
 Compression=lzma
 SolidCompression=yes
 SetupIconFile=..\Windows\assets\icon.ico
@@ -42,7 +47,7 @@ RestartApplications=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\Windows\dist\ITFlowQuickTicket.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Windows\dist\ITPanelPro.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start on login for all users
@@ -126,16 +131,48 @@ begin
   Result := FallbackDefault;
 end;
 
+// Silently uninstalls a previous "ITFlow Quick Ticket" install (old AppId)
+// if one is found, so upgrades to ITPanel Pro don't leave a stale install
+// or duplicate startup entry behind.
+procedure UninstallOldVersion;
+var
+  UninstallString: String;
+  ResultCode: Integer;
+begin
+  if RegQueryStringValue(HKLM, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#OldAppId}_is1',
+       'QuietUninstallString', UninstallString)
+     or RegQueryStringValue(HKLM, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#OldAppId}_is1',
+       'UninstallString', UninstallString) then
+  begin
+    UninstallString := RemoveQuotes(UninstallString);
+    Exec(UninstallString, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE,
+      ewWaitUntilTerminated, ResultCode);
+  end;
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  UninstallOldVersion;
+  Result := True;
+end;
+
 procedure InitializeWizard;
 var
-  ConfigPath, ExistingJson: String;
+  ConfigPath, OldConfigPath, ExistingJson: String;
   ExistingJsonA: AnsiString;
 begin
-  ConfigPath := ExpandConstant('{commonappdata}\ITFlowQuickTicket\config.json');
+  ConfigPath := ExpandConstant('{commonappdata}\ITPanelPro\config.json');
+  OldConfigPath := ExpandConstant('{commonappdata}\ITFlowQuickTicket\config.json');
   ExistingJson := '';
   if FileExists(ConfigPath) then
   begin
     LoadStringFromFile(ConfigPath, ExistingJsonA);
+    ExistingJson := String(ExistingJsonA);
+  end
+  else if FileExists(OldConfigPath) then
+  begin
+    // Migrate settings from a previous "ITFlow Quick Ticket" install.
+    LoadStringFromFile(OldConfigPath, ExistingJsonA);
     ExistingJson := String(ExistingJsonA);
   end;
 
@@ -145,8 +182,9 @@ begin
     'These values are saved to config.json and used by the tray app to ' +
     'submit tickets. You can find the API key under Admin > API Keys, ' +
     'and the Client ID on the client''s page in ITFlow.' + #13#10 + #13#10 +
-    'If ITFlow Quick Ticket is already installed, the existing settings ' +
-    'below are pre-filled and will be kept unless you change them.');
+    'If ITPanel Pro (or ITFlow Quick Ticket) is already installed, the ' +
+    'existing settings below are pre-filled and will be kept unless you ' +
+    'change them.');
 
   ConfigPage.Add('ITFlow Base URL (e.g. https://itflow.example.com):', False);
   ConfigPage.Add('API Key:', False);
@@ -241,7 +279,7 @@ begin
     '    "priority": "' + JsonEscape(Priority) + '"' + #13#10 +
     '}' + #13#10;
 
-  ConfigDir := ExpandConstant('{commonappdata}\ITFlowQuickTicket');
+  ConfigDir := ExpandConstant('{commonappdata}\ITPanelPro');
   ConfigPath := ConfigDir + '\config.json';
 
   if not DirExists(ConfigDir) then

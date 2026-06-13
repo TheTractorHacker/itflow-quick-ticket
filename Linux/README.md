@@ -1,4 +1,4 @@
-# ITFlow Quick Ticket (Linux)
+# ITPanel Pro (Linux)
 
 A system tray app for Linux desktops, equivalent to the
 [Windows tray app](../Windows), letting end users submit an ITFlow support
@@ -21,11 +21,11 @@ depends on a few things being present on the target system:
 ## Repo layout
 
 - `tray_app.py` — entry point; shared UI/logic lives in `../common/core.py`
-- `itflow_quick_ticket.spec` — PyInstaller spec, produces a single-file
-  `ITFlowQuickTicket` binary
-- `itflow-quick-ticket.desktop` — XDG autostart entry
-- `install.sh` — installs the binary to `/opt/itflow-quick-ticket`, writes
-  `/etc/itflow-quick-ticket/config.json`, and registers autostart
+- `itpanel_pro.spec` — PyInstaller spec, produces a single-file
+  `ITPanelPro` binary
+- `itpanel-pro.desktop` — XDG autostart entry
+- `install.sh` — installs the binary to `/opt/itpanel-pro`, writes
+  `/etc/itpanel-pro/config.json`, and registers autostart
 - `assets/` — branded icons
 
 ## Getting a build
@@ -33,7 +33,7 @@ depends on a few things being present on the target system:
 ### Option A: GitHub Actions
 
 Push a tag like `v1.3.0` (or run the workflow manually) and GitHub Actions
-builds on `ubuntu-latest`, producing `ITFlowQuickTicket` and attaching it
+builds on `ubuntu-latest`, producing `ITPanelPro` and attaching it
 (plus a tarball with `install.sh` and assets) to the GitHub release.
 
 ### Option B: Build locally on Linux
@@ -43,8 +43,8 @@ cd Linux
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pyinstaller itflow_quick_ticket.spec
-# binary at dist/ITFlowQuickTicket
+pyinstaller itpanel_pro.spec
+# binary at dist/ITPanelPro
 ```
 
 ## Installing
@@ -53,8 +53,8 @@ pyinstaller itflow_quick_ticket.spec
 sudo ./install.sh https://itflow.foleyit.com <API_KEY> <CLIENT_ID> [CONTACT_ID] [PRIORITY]
 ```
 
-This installs the binary to `/opt/itflow-quick-ticket`, writes
-`/etc/itflow-quick-ticket/config.json`, and adds an XDG autostart entry so
+This installs the binary to `/opt/itpanel-pro`, writes
+`/etc/itpanel-pro/config.json`, and adds an XDG autostart entry so
 the tray app starts for every user on next login (and launches it
 immediately if run from a graphical session).
 
@@ -62,7 +62,7 @@ immediately if run from a graphical session).
 
 Re-run `install.sh`. It stops any running instance, replaces the binary,
 and — if you omit the connection-setting arguments — keeps the existing
-`/etc/itflow-quick-ticket/config.json`.
+`/etc/itpanel-pro/config.json`.
 
 ## Config reference (`config.json`)
 
@@ -73,8 +73,8 @@ Same fields as the [Windows app](../Windows/README.md#config-reference-configjso
 
 Config is read from, in order:
 
-1. `/etc/itflow-quick-ticket/config.json` (system-wide, written by `install.sh`)
-2. `~/.config/itflow-quick-ticket/config.json` (per-user override)
+1. `/etc/itpanel-pro/config.json` (system-wide, written by `install.sh`)
+2. `~/.config/itpanel-pro/config.json` (per-user override)
 3. `config.json` next to the binary
 
 ## Quick Tools notes

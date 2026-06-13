@@ -1,5 +1,5 @@
 """
-ITFlow Quick Ticket - shared core
+ITPanel Pro - shared core
 
 Platform-specific entry points (Windows/tray_app.py, Linux/tray_app.py,
 macOS/tray_app.py) import this module and call run_app() with a list of
@@ -21,6 +21,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import webbrowser
@@ -31,9 +32,9 @@ import pystray
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-APP_NAME = "ITFlow Quick Ticket"
-VERSION = "1.4.0"
-GITHUB_REPO = "TheTractorHacker/itflow-quick-ticket"
+APP_NAME = "ITPanel Pro"
+VERSION = "2.0.0"
+GITHUB_REPO = "TheTractorHacker/itpanel-pro"
 
 ACCENT = "#2563eb"
 ACCENT_DARK = "#1d4ed8"
@@ -56,12 +57,12 @@ def data_dir():
     system = platform.system()
     if system == "Windows":
         base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
-        path = os.path.join(base, "ITFlowQuickTicket")
+        path = os.path.join(base, "ITPanelPro")
     elif system == "Darwin":
-        path = os.path.expanduser("~/Library/Application Support/ITFlowQuickTicket")
+        path = os.path.expanduser("~/Library/Application Support/ITPanelPro")
     else:
         base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-        path = os.path.join(base, "itflow-quick-ticket")
+        path = os.path.join(base, "itpanel-pro")
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -486,7 +487,7 @@ def _version_tuple(v):
 
 
 def check_for_update():
-    """Return (latest_version, html_url) if a newer release is available."""
+    """Return (latest_version, release_dict) if a newer release is available."""
     try:
         resp = requests.get(
             f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest", timeout=10
@@ -495,7 +496,7 @@ def check_for_update():
         data = resp.json()
         tag = (data.get("tag_name") or "").lstrip("v")
         if tag and _version_tuple(tag) > _version_tuple(VERSION):
-            return tag, data.get("html_url")
+            return tag, data
     except Exception:
         return None
     return None
@@ -962,17 +963,49 @@ def run_app(config_paths, icon_path=None):
     def do_spooler(icon=None, item=None):
         run_quick_tool(root, "Restart Print Service", tool_restart_spooler)
 
+    def do_open_portal(icon=None, item=None):
+        base_url = config["itflow_base_url"].rstrip("/")
+        webbrowser.open(f"{base_url}/client/")
+
+    def do_self_update(tag, release):
+        """Download the new installer and run it silently. Inno Setup's
+        CloseApplications=force/RestartApplications=yes will close this
+        process and relaunch the updated app once the install finishes."""
+        asset = next(
+            (a for a in release.get("assets", []) if a["name"].lower().endswith("setup.exe")),
+            None,
+        )
+        if not asset:
+            webbrowser.open(release.get("html_url"))
+            return
+        try:
+            dest = os.path.join(tempfile.gettempdir(), asset["name"])
+            with requests.get(asset["browser_download_url"], stream=True, timeout=60) as r:
+                r.raise_for_status()
+                with open(dest, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            subprocess.Popen([dest, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"])
+        except Exception as exc:
+            root.after(0, lambda: messagebox.showerror(APP_NAME, f"Update failed: {exc}"))
+
     def do_check_update(icon=None, item=None):
         def worker():
             result = check_for_update()
-            if result:
-                tag, url = result
+            if not result:
+                root.after(0, lambda: messagebox.showinfo(APP_NAME, f"You're up to date (v{VERSION})."))
+                return
+            tag, release = result
+            if platform.system() == "Windows":
                 def ask():
-                    if messagebox.askyesno(APP_NAME, f"A new version (v{tag}) is available. Open the download page?"):
-                        webbrowser.open(url)
+                    if messagebox.askyesno(APP_NAME, f"A new version (v{tag}) is available. Update and restart now?"):
+                        threading.Thread(target=do_self_update, args=(tag, release), daemon=True).start()
                 root.after(0, ask)
             else:
-                root.after(0, lambda: messagebox.showinfo(APP_NAME, f"You're up to date (v{VERSION})."))
+                def ask():
+                    if messagebox.askyesno(APP_NAME, f"A new version (v{tag}) is available. Open the download page?"):
+                        webbrowser.open(release.get("html_url"))
+                root.after(0, ask)
         threading.Thread(target=worker, daemon=True).start()
 
     quick_tools_menu = pystray.Menu(
@@ -985,6 +1018,7 @@ def run_app(config_paths, icon_path=None):
     menu = pystray.Menu(
         pystray.MenuItem("New Ticket", open_window, default=True),
         pystray.MenuItem("My Recent Tickets", open_recent),
+        pystray.MenuItem("Open Client Portal", do_open_portal),
         pystray.MenuItem("Quick Tools", quick_tools_menu),
         pystray.MenuItem("Check for Updates", do_check_update),
         pystray.MenuItem("Exit", quit_app),
@@ -1016,9 +1050,9 @@ def run_app(config_paths, icon_path=None):
         def startup_check():
             result = check_for_update()
             if result:
-                tag, _url = result
+                tag, _release = result
                 try:
-                    icon.notify(f"ITFlow Quick Ticket v{tag} is available.", title=APP_NAME)
+                    icon.notify(f"{APP_NAME} v{tag} is available.", title=APP_NAME)
                 except Exception:
                     pass
         threading.Thread(target=startup_check, daemon=True).start()
