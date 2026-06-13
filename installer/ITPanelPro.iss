@@ -17,7 +17,7 @@
 ;     /ApiKey=XXXXXXXX /ClientId=5 /ContactId=12 /Priority=Medium
 
 #define MyAppName "ITPanel Pro"
-#define MyAppVersion "2.0.3"
+#define MyAppVersion "2.0.4"
 #define MyAppPublisher "Foley IT"
 #define MyAppExeName "ITPanelPro.exe"
 #define OldAppId "{B7B6A6E1-6E0C-4C2D-9F2F-7C1D4A9E3B21}"
@@ -61,6 +61,11 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName} now"; Flags: nowait postinstall skipifsilent
+; Silent/very silent runs (unattended deploys and the tray app's
+; self-update) skip the entry above, and RestartApplications=yes can't
+; relaunch the app since it never registered with Restart Manager - so
+; relaunch it explicitly here when running silently.
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent
 
 [Code]
 var
